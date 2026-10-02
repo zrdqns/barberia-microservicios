@@ -1,0 +1,19 @@
+# Maven
+target/
+
+# Node
+node_modules/
+dist/
+
+# Editores
+.idea/
+.vscode/
+*.iml
+
+# Sistema y registros
+.DS_Store
+Thumbs.db
+*.log
+
+# Archivos temporales de Word
+~$*
