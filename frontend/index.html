@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Barbería · Gestión de citas</title>
+    <script>
+      // Se aplica el tema antes de pintar: el guardado, o el del sistema operativo.
+      (function () {
+        var guardado = null
+        try {
+          guardado = localStorage.getItem('tema')
+        } catch (e) {}
+        var oscuro = guardado ? guardado === 'oscuro' : matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.dataset.tema = oscuro ? 'oscuro' : 'claro'
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
