@@ -1,74 +1,73 @@
-# Sistema de gestión de barbería
+# Barbershop management system
 
-Proyecto del segundo corte de **Diseño de Soluciones** — Ingeniería de Sistemas.
-Grupo 8: Daniel Felipe Vanegas y Camilo Andrés Paternina.
+Second-term project for **Solution Design** — Systems Engineering.
+Group 8: Daniel Felipe Vanegas and Camilo Andrés Paternina.
 
-La barbería agenda citas: cada cita une un cliente, un servicio y un barbero. Partimos el
-sistema en dos microservicios con Spring Boot y una interfaz web que los consume.
+The barbershop books appointments: each appointment joins a client, a service and a barber.
+We split the system into two Spring Boot microservices and a web interface that consumes them.
 
-## Arquitectura
+## Architecture
 
 ```mermaid
 flowchart LR
-    F["Frontend<br/>React · puerto 5173"]
-    C["api-citas<br/>Spring Boot · puerto 8080<br/>clientes y citas"]
-    K["api-catalogo<br/>Spring Boot · puerto 8081<br/>servicios y barberos"]
+    F["Frontend<br/>React · port 5173"]
+    C["api-citas<br/>Spring Boot · port 8080<br/>clients and appointments"]
+    K["api-catalogo<br/>Spring Boot · port 8081<br/>services and barbers"]
 
     F -- "HTTP / JSON" --> C
     F -- "HTTP / JSON" --> K
-    C -- "RestClient (síncrono)" --> K
+    C -- "RestClient (synchronous)" --> K
 ```
 
-| Parte | Carpeta | Qué hace |
+| Part | Folder | What it does |
 |---|---|---|
-| api-catalogo | `api-catalogo/` | CRUD de los servicios que ofrece la barbería y de los barberos. |
-| api-citas | `api-citas/` | CRUD de clientes y de citas. Para agendar consulta el servicio y el barbero en api-catalogo. |
-| Frontend | `frontend/` | Interfaz web para manejar las cuatro entidades y ver el estado de los microservicios. |
+| api-catalogo | `api-catalogo/` | CRUD for the services the barbershop offers and for the barbers. |
+| api-citas | `api-citas/` | CRUD for clients and appointments. To book, it looks up the service and the barber in api-catalogo. |
+| Frontend | `frontend/` | Web interface to manage the four entities and see the status of the microservices. |
 
-Cada microservicio se ejecuta por separado, tiene sus propios controllers y guarda sus
-propios datos. Los datos viven en memoria: al reiniciar un microservicio vuelve a sus datos
-de demostración.
+Each microservice runs separately, has its own controllers and stores its own data. The
+data lives in memory: when a microservice restarts it goes back to its demo data.
 
-### Comunicación entre microservicios
+### Communication between microservices
 
-Para agendar una cita el cliente envía solo los IDs:
+To book an appointment the client sends only the IDs:
 
 ```json
 { "clienteId": 1, "servicioId": 3, "barberoId": 1, "fechaHora": "2026-12-01T10:00" }
 ```
 
-1. `CitaController` recibe el `POST /api/citas`.
-2. `CitaService` busca el cliente, que pertenece a api-citas.
-3. `CatalogoCliente` hace `GET /api/servicios/{id}` y `GET /api/barberos/{id}` a api-catalogo con `RestClient`.
-4. Con las tres respuestas se valida la cita, se guarda y se responde `201`.
+1. `CitaController` receives the `POST /api/citas`.
+2. `CitaService` looks up the client, which belongs to api-citas.
+3. `CatalogoCliente` sends `GET /api/servicios/{id}` and `GET /api/barberos/{id}` to api-catalogo with `RestClient`.
+4. With the three responses the appointment is validated, saved and answered with `201`.
 
-La comunicación es síncrona: api-citas espera la respuesta de api-catalogo antes de
-continuar. Si api-catalogo está apagado, api-citas responde `503` con un mensaje claro y
-el resto de sus endpoints (clientes, consultar citas) sigue funcionando. La URL del otro
-microservicio está en `application.properties` (`api.catalogo.url`), no en el código.
+The communication is synchronous: api-citas waits for api-catalogo's response before
+continuing. If api-catalogo is down, api-citas answers `503` with a clear message and the
+rest of its endpoints (clients, querying appointments) keep working. The other
+microservice's URL is in `application.properties` (`api.catalogo.url`), not in the code.
 
-## Cómo ejecutar
+## How to run
 
-Requisitos: **JDK 17 o superior** y **Node.js 20 o superior**. Maven no hace falta: cada
-microservicio trae su wrapper (`mvnw`).
+Requirements: **JDK 17 or later** and **Node.js 20 or later**. Maven is not needed: each
+microservice ships its own wrapper (`mvnw`).
 
-Se abren tres terminales desde la raíz del repositorio.
+Open three terminals at the repository root.
 
-**1. api-catalogo** (puerto 8081)
+**1. api-catalogo** (port 8081)
 
 ```bash
 cd api-catalogo
 ./mvnw spring-boot:run
 ```
 
-**2. api-citas** (puerto 8080)
+**2. api-citas** (port 8080)
 
 ```bash
 cd api-citas
 ./mvnw spring-boot:run
 ```
 
-**3. Frontend** (puerto 5173)
+**3. Frontend** (port 5173)
 
 ```bash
 cd frontend
@@ -76,46 +75,46 @@ npm install
 npm run dev
 ```
 
-En Windows (PowerShell o CMD) el wrapper se llama `.\mvnw.cmd`.
+On Windows (PowerShell or CMD) the wrapper is called `.\mvnw.cmd`.
 
-| Dirección | Qué hay |
+| Address | What is there |
 |---|---|
-| http://localhost:5173 | Interfaz web |
-| http://localhost:8081/swagger-ui.html | Swagger de api-catalogo |
-| http://localhost:8080/swagger-ui.html | Swagger de api-citas |
+| http://localhost:5173 | Web interface |
+| http://localhost:8081/swagger-ui.html | Swagger for api-catalogo |
+| http://localhost:8080/swagger-ui.html | Swagger for api-citas |
 
-El frontend tiene que correr en el puerto 5173 porque es el único origen que los
-microservicios aceptan por CORS (`frontend.url` en cada `application.properties`).
+The frontend has to run on port 5173 because it is the only origin the microservices
+accept through CORS (`frontend.url` in each `application.properties`).
 
-## API REST
+## REST API
 
-La tabla completa de endpoints por controller está en
-[docs/endpoints.pdf](docs/endpoints.pdf) (también en Word: `docs/endpoints.docx`).
+The full table of endpoints per controller is in
+[docs/endpoints.pdf](docs/endpoints.pdf) (also in Word: `docs/endpoints.docx`).
 
-Los cuatro recursos siguen el mismo esquema:
+The four resources follow the same scheme:
 
-| Método | Endpoint | Operación |
+| Method | Endpoint | Operation |
 |---|---|---|
-| `POST` | `/api/{recurso}` | Crear |
-| `GET` | `/api/{recurso}` | Listar |
-| `GET` | `/api/{recurso}/{id}` | Consultar |
-| `PUT` | `/api/{recurso}/{id}` | Actualizar |
-| `DELETE` | `/api/{recurso}/{id}` | Eliminar |
+| `POST` | `/api/{resource}` | Create |
+| `GET` | `/api/{resource}` | List |
+| `GET` | `/api/{resource}/{id}` | Get one |
+| `PUT` | `/api/{resource}/{id}` | Update |
+| `DELETE` | `/api/{resource}/{id}` | Delete |
 
-`{recurso}` es `servicios` o `barberos` en api-catalogo, y `clientes` o `citas` en
-api-citas. Además:
+`{resource}` is `servicios` or `barberos` in api-catalogo, and `clientes` or `citas` in
+api-citas. In addition:
 
-- `PATCH /api/citas/{id}/estado` cambia solo el estado de una cita (completar o cancelar).
-- `GET /api/conexion/catalogo` comprueba, desde api-citas, que api-catalogo responde.
-- `GET /api/status` en cada microservicio.
+- `PATCH /api/citas/{id}/estado` changes only an appointment's status (complete or cancel).
+- `GET /api/conexion/catalogo` checks, from api-citas, that api-catalogo responds.
+- `GET /api/status` on each microservice.
 
-Los errores siempre llegan como `{"mensaje": "..."}` con el código que corresponde:
-`400` datos inválidos, `404` no existe, `409` choca con los datos actuales, `503` el otro
-microservicio no respondió.
+Errors always arrive as `{"mensaje": "..."}` with the matching code: `400` invalid data,
+`404` not found, `409` conflicts with the current data, `503` the other microservice did
+not respond.
 
-### JSON y XML
+### JSON and XML
 
-Los `GET` de servicios devuelven JSON o XML según el header `Accept`:
+The services' `GET` endpoints return JSON or XML depending on the `Accept` header:
 
 ```bash
 curl -H "Accept: application/xml" http://localhost:8081/api/servicios/1
@@ -125,74 +124,75 @@ curl -H "Accept: application/xml" http://localhost:8081/api/servicios/1
 <ServicioDTOResponse><id>1</id><nombre>Corte clásico</nombre>...</ServicioDTOResponse>
 ```
 
-## Reglas del negocio
+## Business rules
 
-- Una cita solo se agenda con un servicio y un barbero **activos** en el catálogo.
-- No se agendan citas en una fecha pasada.
-- Un barbero no puede tener dos citas programadas que se crucen. El cruce se calcula con
-  la duración del servicio.
-- Una cita nace `PROGRAMADA` y solo puede pasar a `COMPLETADA` o `CANCELADA`. Una vez
-  cerrada no se modifica.
-- No se elimina un cliente que tenga citas programadas.
-- No se repiten documentos de clientes o barberos ni nombres de servicios.
-- La cita conserva el nombre y el precio del servicio con los que se agendó, aunque
-  después cambien en el catálogo.
+- An appointment is only booked with a service and a barber that are **active** in the catalog.
+- Appointments are not booked on a past date.
+- A barber cannot have two scheduled appointments that overlap. The overlap is computed
+  with the service's duration.
+- An appointment starts as `PROGRAMADA` (scheduled) and can only move to `COMPLETADA`
+  (completed) or `CANCELADA` (cancelled). Once closed it is not modified.
+- A client with scheduled appointments is not deleted.
+- Client and barber ID documents and service names are not repeated.
+- The appointment keeps the service's name and price it was booked with, even if they
+  later change in the catalog.
 
-## Estructura de cada microservicio
+## Structure of each microservice
 
 ```
-controller/   endpoints REST y el manejador de errores
-service/      reglas del negocio y datos en memoria
-model/        entidades del dominio
-dto/          lo que la API recibe (DTORequest) y lo que devuelve (DTOResponse)
-cliente/      comunicación con el otro microservicio (solo api-citas)
-config/       RestClient y CORS
+controller/   REST endpoints and the error handler
+service/      business rules and in-memory data
+model/        domain entities
+dto/          what the API receives (DTORequest) and what it returns (DTOResponse)
+cliente/      communication with the other microservice (api-citas only)
+config/       RestClient and CORS
 ```
 
-## Lo que aplicamos de cada clase
+## What we applied from each class
 
-| Tema | Dónde está |
+| Topic | Where it is |
 |---|---|
-| Microservicios | Dos aplicaciones Spring Boot independientes, cada una con su puerto y sus datos. |
-| API First | Diseñamos primero los recursos y endpoints (`docs/endpoints.pdf`). Swagger UI documenta cada API. |
-| Arquitectura por capas | `Controller → Service → Model` en los dos microservicios. |
-| Métodos HTTP | `GET`, `POST`, `PUT`, `PATCH` y `DELETE`, con sus códigos de respuesta. |
-| JSON, Jackson y DTOs | Un `DTORequest` y un `DTOResponse` por recurso. El cliente nunca envía el `id` ni el estado de una cita: los define la aplicación. |
-| XML | `jackson-dataformat-xml` y `produces` con JSON y XML en `ServicioController`. |
-| Comunicación síncrona | `CatalogoCliente` + `RestClientConfig` en api-citas. |
+| Microservices | Two independent Spring Boot applications, each with its own port and data. |
+| API First | We designed the resources and endpoints first (`docs/endpoints.pdf`). Swagger UI documents each API. |
+| Layered architecture | `Controller → Service → Model` in both microservices. |
+| HTTP methods | `GET`, `POST`, `PUT`, `PATCH` and `DELETE`, with their response codes. |
+| JSON, Jackson and DTOs | One `DTORequest` and one `DTOResponse` per resource. The client never sends the `id` or an appointment's status: the application sets them. |
+| XML | `jackson-dataformat-xml` and `produces` with JSON and XML in `ServicioController`. |
+| Synchronous communication | `CatalogoCliente` + `RestClientConfig` in api-citas. |
 
-Usamos Spring Boot 4, que trae Jackson 3. Por eso la dependencia de XML es
-`tools.jackson.dataformat:jackson-dataformat-xml` y no la de `com.fasterxml` de Jackson 2.
+We use Spring Boot 4, which ships Jackson 3. That is why the XML dependency is
+`tools.jackson.dataformat:jackson-dataformat-xml` and not the `com.fasterxml` one from Jackson 2.
 
-## Interfaz
+## Interface
 
-Hecha con React y Vite, sin librería de componentes: los estilos están en
+Built with React and Vite, with no component library: the styles are in
 `frontend/src/estilos.css`.
 
-- Barra lateral con las cinco secciones: Inicio, Citas, Clientes, Servicios y Barberos.
-- Cada sección tiene tabla, búsqueda o filtro, formulario para crear y editar, y
-  confirmación antes de eliminar.
-- Los formularios validan antes de enviar y muestran el mensaje de la API cuando esta
-  rechaza la operación.
-- Mientras llegan los datos se muestran esqueletos con la forma del contenido.
-- Tema claro y oscuro. Se recuerda la elección y, la primera vez, se toma el del sistema.
-- Inicio muestra las próximas citas y si cada microservicio y la conexión entre ellos
-  están en línea.
-- Se adapta a pantallas pequeñas y respeta la preferencia de movimiento reducido.
+- Sidebar with the five sections: Inicio (home), Citas (appointments), Clientes (clients),
+  Servicios (services) and Barberos (barbers).
+- Each section has a table, a search or filter, a form to create and edit, and a
+  confirmation before deleting.
+- The forms validate before submitting and show the API's message when it rejects the
+  operation.
+- While the data arrives, skeletons shaped like the content are shown.
+- Light and dark theme. The choice is remembered and, the first time, the system's is used.
+- Inicio shows the upcoming appointments and whether each microservice and the connection
+  between them are online.
+- It adapts to small screens and respects the reduced-motion preference.
 
-## Pruebas
+## Tests
 
 ```bash
 cd api-catalogo && ./mvnw test
 cd api-citas && ./mvnw test
 ```
 
-Son 38 pruebas con JUnit y MockMvc. Las de api-citas reemplazan `CatalogoCliente` por un
-doble con Mockito, así se prueban las reglas de las citas y el caso del catálogo apagado
-sin tener que encender el otro microservicio.
+There are 38 tests with JUnit and MockMvc. The api-citas ones replace `CatalogoCliente`
+with a Mockito double, so the appointment rules and the catalog-down case are tested
+without having to start the other microservice.
 
-## Alcance de este corte
+## Scope of this term
 
-- Los datos están en memoria. La base de datos llega en el tercer corte.
-- No hay autenticación. Los endpoints están abiertos y CORS solo acepta el origen del
-  frontend. La seguridad con JWT también es del tercer corte.
+- The data is in memory. The database arrives in the third term.
+- There is no authentication. The endpoints are open and CORS only accepts the frontend's
+  origin. Security with JWT is also for the third term.
