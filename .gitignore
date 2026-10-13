@@ -17,3 +17,8 @@ Thumbs.db
 
 # Archivos temporales de Word
 ~$*
+
+# Contexto de diseño local
+.impeccable/
+PRODUCT.md
+DESIGN.md
