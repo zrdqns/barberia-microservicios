@@ -165,20 +165,31 @@ We use Spring Boot 4, which ships Jackson 3. That is why the XML dependency is
 
 ## Interface
 
-Built with React and Vite, with no component library: the styles are in
-`frontend/src/estilos.css`.
+Built with React and Vite, with no component library: the styles are plain CSS in
+`frontend/src/estilos/` (base, estructura, componentes and citas). The barbershop is called
+El Remolino.
 
-- Sidebar with the five sections: Inicio (home), Citas (appointments), Clientes (clients),
-  Servicios (services) and Barberos (barbers).
-- Each section has a table, a search or filter, a form to create and edit, and a
-  confirmation before deleting.
+- Sidebar with the five sections: Hoy (today), Citas (appointments), Clientes (clients),
+  Servicios (services) and Barberos (barbers). The open section is kept in the address
+  (`#/citas`), so F5 and the back button preserve it.
+- Hoy is the day's schedule: one column per active barber and the hours going down.
+  Clicking a free slot books that time with that barber. Next to it are the next
+  appointment with its actions, the day's totals and the upcoming appointments.
+- Citas shows each appointment as a ticket, grouped by day, with a search and a status
+  filter. Clientes, Servicios and Barberos have a table, a search, a form to create and
+  edit, and a confirmation before deleting.
+- The appointment form shows what the barber already has booked that day and warns about
+  an overlap before saving. It also lets you create a client without leaving it.
 - The forms validate before submitting and show the API's message when it rejects the
-  operation.
+  operation. Confirmations show the data of the appointment or record.
+- The status of both microservices and of the call between them is visible in every
+  section, at the bottom of the sidebar. If api-catalogo does not respond, the interface
+  explains it, shows the 503 response from api-citas and recovers on its own when it
+  comes back.
 - While the data arrives, skeletons shaped like the content are shown.
 - Light and dark theme. The choice is remembered and, the first time, the system's is used.
-- Inicio shows the upcoming appointments and whether each microservice and the connection
-  between them are online.
-- It adapts to small screens and respects the reduced-motion preference.
+- It adapts to small screens (bottom menu and rows as cards) and respects the
+  reduced-motion preference.
 
 ## Tests
 
