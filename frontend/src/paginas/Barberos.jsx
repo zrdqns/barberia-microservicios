@@ -1,9 +1,10 @@
 import { barberos } from '../api.js'
 import PaginaCrud from '../componentes/PaginaCrud.jsx'
+import Sello from '../componentes/Sello.jsx'
 
 const textos = {
   titulo: 'Barberos',
-  descripcion: 'Equipo que atiende las citas.',
+  descripcion: 'Equipo que atiende las citas. Cada barbero activo tiene su silla en la agenda.',
   nuevo: 'Nuevo barbero',
   editar: 'Editar barbero',
   eliminar: 'Eliminar barbero',
@@ -13,19 +14,26 @@ const textos = {
   eliminado: 'Barbero eliminado',
   buscar: 'Buscar por nombre o especialidad',
   vacioTitulo: 'Aún no hay barberos',
-  vacioTexto: 'Cree el primero con el botón «Nuevo barbero».',
+  vacioTexto: 'Sin un barbero activo no se pueden agendar citas.',
+  ninguno: 'Ningún barbero',
   confirmar: (barbero) => `Se eliminará a ${barbero.nombre}. Las citas ya agendadas conservan sus datos.`,
 }
 
 const columnas = [
-  { titulo: 'Nombre', celda: (barbero) => <span className="dato-principal">{barbero.nombre}</span> },
-  { titulo: 'Documento', celda: (barbero) => barbero.documento },
-  { titulo: 'Teléfono', celda: (barbero) => barbero.telefono || '—' },
-  { titulo: 'Especialidad', celda: (barbero) => barbero.especialidad || '—' },
+  { titulo: 'Nombre', clase: 'principal', celda: (barbero) => barbero.nombre },
+  { titulo: 'Documento', clase: 'numero-id', celda: (barbero) => barbero.documento },
+  {
+    titulo: 'Teléfono',
+    clase: 'numero-id',
+    celda: (barbero) => barbero.telefono || <span className="sin-dato">Sin teléfono</span>,
+  },
+  {
+    titulo: 'Especialidad',
+    celda: (barbero) => barbero.especialidad || <span className="sin-dato">Sin especialidad</span>,
+  },
   {
     titulo: 'Estado',
-    celda: (barbero) =>
-      barbero.activo ? <span className="etiqueta verde">Activo</span> : <span className="etiqueta gris">Inactivo</span>,
+    celda: (barbero) => (barbero.activo ? <Sello tono="ok">Activo</Sello> : <Sello tono="apagado">Inactivo</Sello>),
   },
 ]
 
@@ -42,16 +50,17 @@ const campos = [
     etiqueta: 'Documento',
     tipo: 'text',
     teclado: 'numeric',
+    soloDigitos: true,
     validar: (valor) => (/^\d{6,10}$/.test(valor.trim()) ? '' : 'Debe tener entre 6 y 10 dígitos.'),
   },
-  { nombre: 'telefono', etiqueta: 'Teléfono', tipo: 'tel', opcional: true },
+  { nombre: 'telefono', etiqueta: 'Teléfono', tipo: 'tel', soloDigitos: true, opcional: true },
   {
     nombre: 'especialidad',
     etiqueta: 'Especialidad',
     tipo: 'text',
     opcional: true,
     completo: true,
-    ejemplo: 'Degradados, barba, cortes clásicos…',
+    ejemplo: 'Degradados, barba, cortes clásicos',
   },
   {
     nombre: 'activo',

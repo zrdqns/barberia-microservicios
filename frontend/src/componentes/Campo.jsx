@@ -1,4 +1,8 @@
 // Etiqueta, control y mensaje de error de un campo de formulario.
+// El control debe llevar aria-describedby={describe(id, error, ayuda)} para que
+// el lector de pantalla lea el error o la ayuda junto con el campo.
+export const describe = (id, error, ayuda) => (error ? `${id}-error` : ayuda ? `${id}-ayuda` : undefined)
+
 export default function Campo({ id, etiqueta, opcional = false, error, ayuda, completo = false, children }) {
   const clases = ['campo']
   if (completo) clases.push('completo')
@@ -11,11 +15,15 @@ export default function Campo({ id, etiqueta, opcional = false, error, ayuda, co
       </label>
       {children}
       {error ? (
-        <span className="campo-error" role="alert">
+        <span id={`${id}-error`} className="campo-error" role="alert">
           {error}
         </span>
       ) : (
-        ayuda && <span className="campo-ayuda">{ayuda}</span>
+        ayuda && (
+          <span id={`${id}-ayuda`} className="campo-ayuda">
+            {ayuda}
+          </span>
+        )
       )}
     </div>
   )

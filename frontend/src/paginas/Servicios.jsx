@@ -1,5 +1,6 @@
 import { servicios } from '../api.js'
 import PaginaCrud from '../componentes/PaginaCrud.jsx'
+import Sello from '../componentes/Sello.jsx'
 import { formatoPesos } from '../formato.js'
 
 const textos = {
@@ -14,20 +15,24 @@ const textos = {
   eliminado: 'Servicio eliminado',
   buscar: 'Buscar por nombre',
   vacioTitulo: 'Aún no hay servicios',
-  vacioTexto: 'Cree el primero con el botón «Nuevo servicio».',
+  vacioTexto: 'Sin un servicio activo no se pueden agendar citas.',
+  ninguno: 'Ningún servicio',
   confirmar: (servicio) =>
     `Se eliminará el servicio «${servicio.nombre}». Las citas ya agendadas conservan sus datos.`,
 }
 
 const columnas = [
-  { titulo: 'Servicio', celda: (servicio) => <span className="dato-principal">{servicio.nombre}</span> },
-  { titulo: 'Descripción', clase: 'secundario', celda: (servicio) => servicio.descripcion || '—' },
+  { titulo: 'Servicio', clase: 'principal', celda: (servicio) => servicio.nombre },
+  {
+    titulo: 'Descripción',
+    clase: 'secundario',
+    celda: (servicio) => servicio.descripcion || <span className="sin-dato">Sin descripción</span>,
+  },
   { titulo: 'Duración', clase: 'numero', celda: (servicio) => `${servicio.duracionMinutos} min` },
   { titulo: 'Precio', clase: 'numero', celda: (servicio) => formatoPesos(servicio.precio) },
   {
     titulo: 'Estado',
-    celda: (servicio) =>
-      servicio.activo ? <span className="etiqueta verde">Activo</span> : <span className="etiqueta gris">Inactivo</span>,
+    celda: (servicio) => (servicio.activo ? <Sello tono="ok">Activo</Sello> : <Sello tono="apagado">Inactivo</Sello>),
   },
 ]
 

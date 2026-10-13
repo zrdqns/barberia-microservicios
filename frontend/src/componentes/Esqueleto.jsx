@@ -18,8 +18,29 @@ export function FilasEsqueleto({ columnas, filas = 5 }) {
         </td>
       ))}
       <td className="acciones">
-        <Esqueleto ancho="74px" clase="pastilla" />
+        <Esqueleto ancho="128px" clase="boton-falso" />
       </td>
     </tr>
+  ))
+}
+
+// Boletas de cita en carga
+export function BoletasEsqueleto({ cantidad = 4 }) {
+  return Array.from({ length: cantidad }, (_, orden) => (
+    <li key={orden} className="boleta en-carga" aria-hidden="true">
+      <div className="boleta-talon">
+        <Esqueleto ancho="68px" clase="alto" />
+        <Esqueleto ancho="84px" />
+      </div>
+      <div className="boleta-datos">
+        <Esqueleto ancho={ANCHOS[orden % ANCHOS.length]} clase="alto" />
+        <Esqueleto ancho={ANCHOS[(orden + 2) % ANCHOS.length]} clase="alto" />
+        <Esqueleto ancho="72px" clase="alto" />
+      </div>
+      <div className="boleta-pie">
+        <Esqueleto ancho="112px" clase="sello-falso" />
+        <Esqueleto ancho="150px" clase="boton-falso" />
+      </div>
+    </li>
   ))
 }

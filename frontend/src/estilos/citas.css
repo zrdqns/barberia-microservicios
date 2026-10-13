@@ -1,0 +1,910 @@
+/* Lo propio de la agenda: la hoja del calendario, el libro por sillas,
+   las boletas de cita y la ocupación del barbero en el formulario. */
+
+/* ---------- Cabecera de Hoy ---------- */
+
+.hoy-cabecera {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px 26px;
+  margin-bottom: 24px;
+}
+
+/* La hoja de un calendario de taco: mes, número y día de la semana */
+.hoja {
+  width: 148px;
+  border: 2px solid var(--borde);
+  border-radius: var(--radio-bloque);
+  background: var(--sup);
+  text-align: center;
+  overflow: clip;
+}
+
+.hoja-mes {
+  display: block;
+  padding: 5px 0;
+  background: var(--verde2);
+  color: var(--sobre-verde);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hoja-numero {
+  display: block;
+  padding-top: 8px;
+  font: 800 4.5rem/1 var(--rotulo);
+  font-variant-numeric: lining-nums;
+  letter-spacing: -0.03em;
+  transition: opacity 240ms var(--salida);
+}
+
+.hoja-semana {
+  display: block;
+  padding: 2px 0 9px;
+  color: var(--suave);
+  font-weight: 600;
+}
+
+/* Al pasar de día, el número nuevo entra desde donde venía la hoja */
+@starting-style {
+  .hoja-numero[data-sentido] {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hoja-numero {
+    transition:
+      opacity 240ms var(--salida),
+      transform 240ms var(--salida),
+      filter 240ms var(--salida);
+  }
+
+  @starting-style {
+    .hoja-numero[data-sentido='adelante'] {
+      transform: translateY(45%);
+      filter: blur(4px);
+    }
+
+    .hoja-numero[data-sentido='atras'] {
+      transform: translateY(-45%);
+      filter: blur(4px);
+    }
+  }
+}
+
+.hoy-titular h1 {
+  font-size: clamp(1.875rem, 1.2rem + 2vw, 2.75rem);
+  line-height: 1.1;
+}
+
+.hoy-titular h1 em {
+  color: var(--enfasis);
+  font-style: italic;
+  font-weight: 800;
+}
+
+.hoy-titular p {
+  max-width: 56ch;
+  margin-top: 10px;
+  color: var(--suave);
+  font-size: 1.0625rem;
+}
+
+.hoy-titular p b {
+  color: var(--tinta);
+  font-weight: 700;
+}
+
+.hoy-acciones {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.hoy-rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+  gap: 24px;
+}
+
+.hoy-lado {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.paso-dias {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 1280px) {
+  .hoy-rejilla {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 20px;
+  }
+}
+
+/* Sin ancho para dos columnas: la boleta sube encima de la agenda, para que
+   al pulsar una cita sus acciones queden a la vista, y lo demás va debajo. */
+@media (max-width: 1020px) {
+  .hoy-rejilla {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hoy-lado {
+    display: contents;
+  }
+
+  .hoy-dia,
+  .hoy-boleta {
+    grid-column: 1 / -1;
+  }
+
+  .hoy-boleta {
+    order: -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .hoy-rejilla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .hoy-cabecera {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .hoja {
+    width: 92px;
+  }
+
+  .hoja-mes {
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+  }
+
+  .hoja-numero {
+    padding-top: 6px;
+    font-size: 2.75rem;
+  }
+
+  .hoja-semana {
+    padding-bottom: 6px;
+    font-size: 0.8125rem;
+  }
+
+  .hoy-titular p {
+    margin-top: 6px;
+    font-size: 1rem;
+  }
+
+  .hoy-acciones {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .hoy-acciones .boton {
+    flex: 1 1 auto;
+  }
+}
+
+/* ---------- Agenda por sillas ---------- */
+
+/* La agenda se desplaza por dentro para que el resto de Hoy quede a la vista */
+.agenda {
+  --col-hora: 84px;
+  max-height: max(420px, calc(100dvh - 350px));
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.agenda:focus-visible {
+  outline-offset: -3px;
+}
+
+.agenda-pie {
+  padding: 10px 18px 12px;
+  border-top: var(--trazo) solid var(--borde);
+  color: var(--suave);
+  font-size: 0.9375rem;
+}
+
+.agenda-cabecera,
+.agenda-cuerpo {
+  display: grid;
+  grid-template-columns: var(--col-hora) repeat(var(--sillas), minmax(150px, 1fr));
+  min-width: calc(var(--col-hora) + var(--sillas) * 150px);
+}
+
+.agenda-cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  border-bottom: var(--trazo) solid var(--borde);
+  background: var(--sup2);
+}
+
+.agenda-esquina {
+  align-self: end;
+  padding: 0 10px 11px 0;
+  color: var(--suave);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.agenda-silla {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-left: 1px solid var(--linea);
+}
+
+.agenda-silla strong {
+  font: 700 1.0625rem var(--rotulo);
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-silla span {
+  color: var(--suave);
+  font-size: 0.875rem;
+}
+
+.agenda-silla span::first-letter {
+  text-transform: uppercase;
+}
+
+.agenda-silla.sin-turnos strong {
+  color: var(--suave);
+}
+
+.agenda-cuerpo {
+  position: relative;
+  isolation: isolate;
+}
+
+.agenda-horas {
+  position: relative;
+}
+
+.agenda-horas span {
+  position: absolute;
+  right: 10px;
+  translate: 0 -50%;
+  color: var(--suave);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.agenda-horas span:first-child {
+  translate: 0 3px;
+}
+
+/* Una raya por hora, a la misma distancia que usa el componente (72 px) */
+.agenda-columna {
+  container-type: inline-size;
+  position: relative;
+  border-left: 1px solid var(--linea);
+  background-image: linear-gradient(var(--linea) 1px, transparent 1px);
+  background-size: 100% 72px;
+}
+
+.hueco {
+  position: absolute;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.hueco:disabled {
+  cursor: default;
+}
+
+.hueco:not(:disabled):active {
+  background: var(--tmostaza);
+  color: var(--tinta);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hueco:not(:disabled):hover {
+    background: var(--tmostaza);
+    color: var(--tinta);
+  }
+}
+
+.turno {
+  position: absolute;
+  right: 5px;
+  left: 5px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2px 9px;
+  border: var(--trazo) solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--mostaza);
+  color: var(--sobre-mostaza);
+  font-size: 0.875rem;
+  line-height: 1.25;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.turno-cabeza {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.turno strong {
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.turno-hora {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 4px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.turno-hora svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.6;
+}
+
+.turno-servicio {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Una cita corta va en un solo renglón: hora, cliente y, si cabe, el servicio */
+.turno.corto {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding-block: 0;
+}
+
+.turno.corto .turno-cabeza {
+  flex: 0 1 auto;
+}
+
+.turno.corto .turno-servicio {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Silla angosta: la hora va sin «a. m.» para dejarle sitio al nombre */
+@container (max-width: 250px) {
+  .turno-periodo {
+    display: none;
+  }
+}
+
+.turno.completada {
+  background: var(--tverde);
+  color: var(--ok);
+}
+
+/* Su hora pasó y sigue programada */
+.turno.sin-cerrar {
+  border: 2px dashed var(--rojo);
+}
+
+/* La cita que está en la boleta del costado: en tinta, distinta del anillo de foco */
+.turno[aria-pressed='true'] {
+  z-index: 2;
+  border-color: var(--tinta);
+  border-style: solid;
+  background: var(--tinta);
+  color: var(--sup);
+}
+
+.turno:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.agenda-pasado {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: var(--col-hora);
+  background: color-mix(in srgb, var(--fondo) 62%, transparent);
+  pointer-events: none;
+}
+
+.agenda-ahora {
+  position: absolute;
+  right: 0;
+  left: var(--col-hora);
+  z-index: 3;
+  border-top: 2px solid var(--rojo);
+  pointer-events: none;
+}
+
+.agenda-ahora > span {
+  position: absolute;
+  top: -1px;
+  right: 100%;
+  translate: 0 -50%;
+  padding: 1px 6px;
+  border-radius: var(--radio);
+  background: var(--rojo);
+  color: var(--sobre-rojo);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.agenda-cuerpo.en-carga .agenda-columna {
+  background-image: none;
+}
+
+.turno-falso {
+  position: absolute;
+  right: 5px;
+  left: 5px;
+  border-radius: var(--radio);
+}
+
+/* ---------- Boletas ---------- */
+
+.boletas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  container-type: inline-size;
+}
+
+/* Dentro de un bloque las boletas van a ras: el bloque ya es su marco */
+.boletas.en-bloque {
+  gap: 0;
+}
+
+.boletas.en-bloque .boleta {
+  border: 0;
+  border-radius: 0;
+}
+
+.boletas.en-bloque > :not(:first-child) {
+  border-top: var(--trazo) solid var(--borde);
+}
+
+.boleta {
+  display: grid;
+  grid-template-columns: 172px minmax(0, 1fr);
+  border: var(--trazo) solid var(--borde);
+  border-radius: var(--radio-bloque);
+  background: var(--sup);
+  overflow: clip;
+}
+
+/* El talón: la hora en grande, separada del resto por la línea de corte */
+.boleta-talon {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  grid-row: 1 / span 2;
+  padding: 10px 14px;
+  border-right: var(--trazo) dashed var(--borde);
+  background: var(--mostaza);
+  color: var(--sobre-mostaza);
+}
+
+.boleta-hora {
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.boleta-hora b {
+  font: 800 1.625rem/1 var(--rotulo);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.01em;
+}
+
+.boleta-dura {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.boleta.completada .boleta-talon {
+  background: var(--tverde);
+  color: var(--ok);
+}
+
+.boleta.cancelada .boleta-talon {
+  background: var(--gris);
+  color: var(--suave);
+}
+
+.boleta.cancelada .boleta-hora b {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+.boleta-datos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto;
+  align-items: start;
+  gap: 6px 24px;
+  padding: 10px 16px;
+}
+
+.boleta-datos dt {
+  color: var(--suave);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.boleta-datos dd {
+  overflow-wrap: anywhere;
+}
+
+.boleta-cliente {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.boleta-nota {
+  color: var(--suave);
+  font-size: 0.875rem;
+}
+
+.boleta-con {
+  color: var(--suave);
+  white-space: nowrap;
+}
+
+.boleta-valor {
+  text-align: right;
+}
+
+/* El pie: en qué estado está la cita y qué se puede hacer con ella */
+.boleta-pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 8px 10px 8px 16px;
+  border-top: 1px dashed var(--linea);
+}
+
+.boleta-estado,
+.boleta-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.boleta.en-carga .boleta-talon {
+  background: var(--sup2);
+}
+
+/* En poco ancho el talón pasa arriba y los datos se apilan */
+@container (max-width: 600px) {
+  .boleta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .boleta-talon {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2px 12px;
+    grid-row: auto;
+    padding: 8px 14px;
+    border-right: 0;
+    border-bottom: var(--trazo) dashed var(--borde);
+  }
+
+  .boleta-datos {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 12px 14px;
+  }
+
+  .boleta-datos > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .boleta-pie {
+    padding: 10px 14px 12px;
+  }
+}
+
+/* ---------- Lista de citas por día ---------- */
+
+.citas {
+  position: relative;
+}
+
+.dia + .dia,
+.corte-dias + .dia {
+  margin-top: 22px;
+}
+
+.dia h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  margin-bottom: 8px;
+  font-size: 1.1875rem;
+}
+
+.dia h2 small {
+  color: var(--suave);
+  font: 500 0.9375rem var(--texto);
+  letter-spacing: 0;
+}
+
+/* Raya que separa lo que viene de lo que ya pasó */
+.corte-dias {
+  margin-top: 30px;
+  padding-top: 12px;
+  border-top: var(--trazo) solid var(--borde);
+  color: var(--suave);
+  font-weight: 500;
+}
+
+/* ---------- Columna lateral de Hoy ---------- */
+
+.cuenta > div,
+.micro li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  border-top: 1px dashed var(--linea);
+}
+
+.cuenta > div:first-child,
+.micro li:first-child {
+  border-top: 0;
+}
+
+.cuenta dt {
+  color: var(--suave);
+}
+
+.cuenta dd {
+  font: 700 1.25rem var(--rotulo);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.micro code,
+.micro strong {
+  display: block;
+  font-weight: 600;
+}
+
+.micro div span {
+  color: var(--suave);
+  font-size: 0.875rem;
+}
+
+.micro-respuesta {
+  padding: 10px 18px 12px;
+  border-top: 1px dashed var(--linea);
+  color: var(--suave);
+  font-size: 0.875rem;
+}
+
+.micro-respuesta code {
+  display: block;
+  margin-top: 2px;
+  color: var(--tinta);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Las cuentas de dinero van aparte de los conteos */
+.cuenta-dinero {
+  border-top: var(--trazo) solid var(--borde);
+}
+
+.despues li + li {
+  border-top: 1px dashed var(--linea);
+}
+
+.despues button {
+  display: grid;
+  grid-template-columns: 98px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 10px 10px 18px;
+  border: 0;
+  background: transparent;
+  color: var(--suave);
+  text-align: left;
+  cursor: pointer;
+}
+
+.despues button:focus-visible {
+  outline-offset: -3px;
+}
+
+.despues-cuando,
+.despues-quien {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.875rem;
+}
+
+.despues b {
+  color: var(--tinta);
+  font-size: 1rem;
+}
+
+.despues-cuando b {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .despues button:hover {
+    background: var(--sup2);
+  }
+}
+
+/* ---------- Ficha de la cita en una confirmación ---------- */
+
+.ficha {
+  margin-bottom: 14px;
+  border: var(--trazo) solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.ficha > div {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 12px;
+  border-top: 1px dashed var(--linea);
+}
+
+.ficha > div:first-child {
+  border-top: 0;
+}
+
+.ficha dt {
+  color: var(--suave);
+  font-size: 0.875rem;
+}
+
+.ficha dd {
+  font-weight: 600;
+}
+
+/* ---------- Ocupación del barbero al agendar ---------- */
+
+.ocupacion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: var(--trazo) solid var(--borde);
+  border-radius: var(--radio-bloque);
+  background: var(--sup2);
+  font-size: 0.9375rem;
+}
+
+.franja {
+  position: relative;
+  height: 22px;
+  border: 1px solid var(--borde);
+  border-radius: 3px;
+  background: var(--sup);
+  overflow: hidden;
+}
+
+.franja-ocupada,
+.franja-nueva {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.franja-ocupada {
+  background: var(--suave);
+}
+
+.franja-nueva {
+  background: var(--mostaza);
+  outline: 1px solid var(--borde);
+}
+
+.franja-nueva.cruce {
+  background: var(--rojo);
+}
+
+.franja-escala {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -4px;
+  color: var(--suave);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ocupacion-lista li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+}
+
+.ocupacion-lista .numero {
+  font-weight: 600;
+}
+
+.ocupacion-cruce {
+  color: var(--rojo);
+  font-weight: 700;
+}
+
+.ocupacion-libre {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.ocupacion-cruce:empty,
+.ocupacion-libre:empty {
+  display: none;
+}

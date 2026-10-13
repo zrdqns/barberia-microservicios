@@ -1,0 +1,197 @@
+/* Barbería El Remolino
+   Colores, tipografía y lo que el navegador dibuja por su cuenta.
+   El resto de los estilos solo usa estas variables. */
+
+:root {
+  color-scheme: light;
+
+  /* Papel y tinta */
+  --fondo: #e4e9df;
+  --sup: #f6f8f2;
+  --sup2: #edf1e8;
+  --linea: #c3ccbd;
+  --borde: #131a16;
+  --tinta: #131a16;
+  --suave: #4a574f;
+
+  /* El rótulo: verde botella y mostaza */
+  --verde: #123a2d;
+  --verde2: #1d5743;
+  --sobre-verde: #eef3ea;
+  --verde-tenue: #9fb8ab;
+  --raya-verde: rgb(238 243 234 / 0.16);
+  --mostaza: #e3a82d;
+  --sobre-mostaza: #1b1705;
+  --tmostaza: #f6e3b3;
+  --enfasis: #1d5743;
+
+  /* Estados */
+  --tverde: #cfe4d6;
+  --ok: #17613f;
+  --rojo: #b3301f;
+  --trojo: #f6dcd5;
+  --sobre-rojo: #fff8f5;
+  --gris: #d5dbd0;
+
+  /* Luces del rótulo, que es oscuro en los dos temas */
+  --luz-bien: #6fd39f;
+  --luz-caida: #ff9c8c;
+  --texto-caido: #ffd3ca;
+
+  --aviso-fondo: #123a2d;
+  --aviso-texto: #eef3ea;
+  --foco: #1d5743;
+  --velo: rgb(19 26 22 / 0.5);
+  --sombra: 0 1px 2px rgb(19 26 22 / 0.1), 0 14px 36px -10px rgb(19 26 22 / 0.35);
+
+  --rotulo: 'Besley Variable', Georgia, 'Times New Roman', serif;
+  --texto: 'Hanken Grotesk Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  /* Una sola escala de esquinas: controles y bloques */
+  --radio: 4px;
+  --radio-bloque: 6px;
+  --trazo: 1.5px;
+
+  --salida: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+:root[data-tema='oscuro'] {
+  color-scheme: dark;
+
+  --fondo: #0d1411;
+  --sup: #141e19;
+  --sup2: #19251f;
+  --linea: #2a3a32;
+  --borde: #5f776a;
+  --tinta: #edf2e9;
+  --suave: #a3b3a8;
+
+  --verde: #08110d;
+  --verde-tenue: #8aa597;
+  --mostaza: #e9b23c;
+  --tmostaza: #3d3212;
+  --enfasis: #e9b23c;
+
+  --tverde: #173427;
+  --ok: #7ad3a5;
+  --rojo: #f08575;
+  --trojo: #3a1c16;
+  --sobre-rojo: #1f0a06;
+  --gris: #25322b;
+
+  --aviso-fondo: #edf2e9;
+  --aviso-texto: #131a16;
+  --foco: #e9b23c;
+  --velo: rgb(0 0 0 / 0.62);
+  --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 14px 36px -10px rgb(0 0 0 / 0.7);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scrollbar-color: var(--linea) transparent;
+  scrollbar-gutter: stable;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Con una ventana abierta la página de atrás no se desplaza */
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--fondo);
+  color: var(--tinta);
+  font: 400 1rem/1.45 var(--texto);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+p,
+dl,
+dd,
+ul,
+fieldset {
+  margin: 0;
+}
+
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+h1,
+h2 {
+  font-family: var(--rotulo);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.875em;
+}
+
+svg.lucide {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+::selection {
+  background: var(--mostaza);
+  color: var(--sobre-mostaza);
+}
+
+:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.numero {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fuera de la vista, pero presente para los lectores de pantalla */
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Al cambiar de tema los colores saltan de una vez, sin fundirse a destiempo */
+.cambiando-tema,
+.cambiando-tema *,
+.cambiando-tema *::before,
+.cambiando-tema *::after {
+  transition: none !important;
+}

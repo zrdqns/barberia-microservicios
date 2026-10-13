@@ -9,12 +9,13 @@ export function useTema() {
     const siguiente = tema === 'oscuro' ? 'claro' : 'oscuro'
     const raiz = document.documentElement
 
-    // Durante un instante los colores se funden en lugar de saltar.
-    // La clase se quita enseguida para no afectar el resto de transiciones.
+    // Las transiciones se apagan durante el cambio: si no, cada color se
+    // funde a su ritmo y la pantalla se ve manchada por un instante.
     raiz.classList.add('cambiando-tema')
     raiz.dataset.tema = siguiente
     setTema(siguiente)
-    setTimeout(() => raiz.classList.remove('cambiando-tema'), 260)
+    void raiz.offsetHeight
+    requestAnimationFrame(() => raiz.classList.remove('cambiando-tema'))
 
     try {
       localStorage.setItem('tema', siguiente)

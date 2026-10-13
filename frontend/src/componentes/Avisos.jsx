@@ -1,5 +1,5 @@
-import { CircleAlert, CircleCheck } from 'lucide-react'
-import { createContext, useCallback, useContext, useState } from 'react'
+import { CircleAlert, CircleCheck, X } from 'lucide-react'
+import { createContext, use, useCallback, useState } from 'react'
 
 const ContextoAvisos = createContext(() => {})
 
@@ -10,33 +10,43 @@ const SALIDA = 180
 export function ProveedorAvisos({ children }) {
   const [avisos, setAvisos] = useState([])
 
-  const avisar = useCallback((tipo, texto) => {
-    const id = crypto.randomUUID()
-    setAvisos((actuales) => [...actuales, { id, tipo, texto, saliendo: false }])
-
-    // Primero se marca para que salga con su transición y luego se quita
-    setTimeout(() => {
-      setAvisos((actuales) => actuales.map((aviso) => (aviso.id === id ? { ...aviso, saliendo: true } : aviso)))
-    }, DURACION - SALIDA)
-    setTimeout(() => {
-      setAvisos((actuales) => actuales.filter((aviso) => aviso.id !== id))
-    }, DURACION)
+  // Primero se marca para que salga con su transición y luego se quita
+  const quitar = useCallback((id) => {
+    setAvisos((actuales) => actuales.map((aviso) => (aviso.id === id ? { ...aviso, saliendo: true } : aviso)))
+    setTimeout(() => setAvisos((actuales) => actuales.filter((aviso) => aviso.id !== id)), SALIDA)
   }, [])
 
+  const avisar = useCallback(
+    (tipo, texto) => {
+      const id = crypto.randomUUID()
+      setAvisos((actuales) => [...actuales, { id, tipo, texto, saliendo: false }])
+      // Una confirmación se va sola; un error se queda hasta que alguien lo cierra
+      if (tipo !== 'error') setTimeout(() => quitar(id), DURACION)
+    },
+    [quitar],
+  )
+
   return (
-    <ContextoAvisos.Provider value={avisar}>
+    <ContextoAvisos value={avisar}>
       {children}
-      <div className="avisos" role="status" aria-live="polite">
+      <div className="avisos" aria-live="polite">
         {avisos.map((aviso) => (
-          <div key={aviso.id} className={`aviso ${aviso.tipo} ${aviso.saliendo ? 'saliendo' : ''}`}>
+          <div
+            key={aviso.id}
+            className={`aviso ${aviso.tipo} ${aviso.saliendo ? 'saliendo' : ''}`}
+            role={aviso.tipo === 'error' ? 'alert' : undefined}
+          >
             {aviso.tipo === 'error' ? <CircleAlert aria-hidden="true" /> : <CircleCheck aria-hidden="true" />}
-            {aviso.texto}
+            <span>{aviso.texto}</span>
+            <button type="button" className="aviso-cerrar" aria-label="Cerrar aviso" onClick={() => quitar(aviso.id)}>
+              <X aria-hidden="true" />
+            </button>
           </div>
         ))}
       </div>
-    </ContextoAvisos.Provider>
+    </ContextoAvisos>
   )
 }
 
 // Uso: const avisar = useAvisos();  avisar('exito', 'Cliente creado')
-export const useAvisos = () => useContext(ContextoAvisos)
+export const useAvisos = () => use(ContextoAvisos)
