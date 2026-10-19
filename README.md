@@ -151,8 +151,35 @@ On Windows (PowerShell or CMD) the wrapper is called `.\mvnw.cmd`.
 | http://localhost:8081/swagger-ui.html | Swagger for api-catalogo |
 | http://localhost:8080/swagger-ui.html | Swagger for api-citas |
 
-The frontend has to run on port 5173 because it is the only origin the microservices
-accept through CORS (`frontend.url` in each `application.properties`).
+The frontend has to run on port 5173 because it is, with the deployed one, the only origin
+the microservices accept through CORS (`frontend.url` in each `application.properties`).
+
+## Deployment
+
+The whole system is also running on Vercel, with the same Supabase database:
+
+| Part | Address | How it runs |
+|---|---|---|
+| Web interface | https://barberia-el-remolino.vercel.app | Static Vite build |
+| api-citas | https://barberia-api-citas.vercel.app | Container function, built from `api-citas/Dockerfile.vercel` |
+| api-catalogo | https://barberia-api-catalogo.vercel.app | Container function, built from `api-catalogo/Dockerfile.vercel` |
+
+Swagger is at `/swagger-ui.html` on each API address.
+
+Each folder is its own Vercel project and is deployed from inside it with `vercel deploy --prod`.
+The settings come from environment variables in each project, never from the repository:
+
+| Project | Variables |
+|---|---|
+| api-citas | `DB_URL`, `DB_USER`, `DB_PASSWORD`, `API_CATALOGO_URL`, `FRONTEND_URL`, `API_TIMEOUT=40s` |
+| api-catalogo | `DB_URL`, `DB_USER`, `DB_PASSWORD`, `API_CITAS_URL`, `FRONTEND_URL`, `API_TIMEOUT=40s` |
+| frontend | `VITE_API_CITAS`, `VITE_API_CATALOGO` (read when building) |
+
+- On Vercel `DB_URL` points to Supabase's **transaction pooler** (port 6543, with
+  `prepareThreshold=0`). Several function instances can run at once, and the session pooler
+  only accepts 15 clients.
+- A microservice that gets no requests for five minutes is shut down. The next request wakes
+  it up and takes about ten seconds; that is why `API_TIMEOUT` is longer there.
 
 ## REST API
 

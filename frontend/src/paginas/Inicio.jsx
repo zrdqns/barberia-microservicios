@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Plus, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { barberos, citas, horario } from '../api.js'
+import { API_CATALOGO, API_CITAS, barberos, citas, horario, lugar } from '../api.js'
 import AgendaSillas, { AgendaEsqueleto } from '../componentes/AgendaSillas.jsx'
 import Alerta from '../componentes/Alerta.jsx'
 import Boleta, { AccionesCita } from '../componentes/Boleta.jsx'
@@ -402,14 +402,14 @@ function Microservicios() {
         <li>
           <div>
             <code>api-citas</code>
-            <span>Puerto 8080, clientes y citas</span>
+            <span>{lugar(API_CITAS)}, clientes, citas y horario</span>
           </div>
           <Conexion activa={apiCitas} si="En línea" no="Sin respuesta" />
         </li>
         <li>
           <div>
             <code>api-catalogo</code>
-            <span>Puerto 8081, servicios y barberos</span>
+            <span>{lugar(API_CATALOGO)}, servicios y barberos</span>
           </div>
           <Conexion activa={apiCatalogo} si="En línea" no="Sin respuesta" />
         </li>

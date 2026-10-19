@@ -16,12 +16,16 @@ public class RestClientConfig {
     @Value("${api.citas.url}")
     private String apiCitasUrl;
 
+    // Cuánto se espera la respuesta (api.timeout en application.properties)
+    @Value("${api.timeout}")
+    private Duration espera;
+
     @Bean
     public RestClient restClient() {
         // Comunicación síncrona con límite de tiempo, igual que la de api-citas hacia este microservicio
         SimpleClientHttpRequestFactory fabrica = new SimpleClientHttpRequestFactory();
-        fabrica.setConnectTimeout(Duration.ofSeconds(2));
-        fabrica.setReadTimeout(Duration.ofSeconds(5));
+        fabrica.setConnectTimeout(Duration.ofSeconds(5));
+        fabrica.setReadTimeout(espera);
 
         return RestClient.builder()
                 .baseUrl(apiCitasUrl)

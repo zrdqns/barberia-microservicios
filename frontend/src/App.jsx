@@ -1,5 +1,6 @@
 import { Armchair, CalendarDays, Moon, RefreshCw, Scissors, Sun, Ticket, Users } from 'lucide-react'
 import { useEffect } from 'react'
+import { EN_LOCAL } from './api.js'
 import Alerta from './componentes/Alerta.jsx'
 import { textoSonda, useConexion } from './conexion.jsx'
 import { rutaDe, useSeccion } from './navegacion.js'
@@ -143,7 +144,9 @@ function AvisoConexion() {
   let texto
   if (!apiCitas && !apiCatalogo) {
     titulo = 'Ningún microservicio responde'
-    texto = 'Encienda api-catalogo (puerto 8081) y api-citas (puerto 8080). Mientras tanto no hay datos que mostrar.'
+    texto = EN_LOCAL
+      ? 'Encienda api-catalogo (puerto 8081) y api-citas (puerto 8080). Mientras tanto no hay datos que mostrar.'
+      : 'Los microservicios están en Vercel y se apagan tras unos minutos sin uso; al volver tardan unos segundos. Si siguen sin responder, revise su despliegue.'
   } else if (!apiCitas) {
     titulo = 'api-citas no responde'
     texto =

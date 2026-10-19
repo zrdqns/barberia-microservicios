@@ -1,0 +1,6 @@
+# Vercel solo necesita el pom.xml, el código y el Dockerfile.vercel
+target/
+.idea/
+.vscode/
+*.iml
+.env*

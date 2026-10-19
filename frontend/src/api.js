@@ -1,7 +1,12 @@
 // Direcciones de los dos microservicios.
 // El frontend habla con ambos; api-citas además consume api-catalogo por su cuenta.
-export const API_CITAS = 'http://localhost:8080'
-export const API_CATALOGO = 'http://localhost:8081'
+// En local corren en estos puertos; en Vercel llegan al compilar en VITE_API_CITAS y VITE_API_CATALOGO.
+export const API_CITAS = import.meta.env.VITE_API_CITAS ?? 'http://localhost:8080'
+export const API_CATALOGO = import.meta.env.VITE_API_CATALOGO ?? 'http://localhost:8081'
+export const EN_LOCAL = API_CITAS.startsWith('http://localhost')
+
+// Dónde está cada microservicio: "Puerto 8080" en local o su dominio en Vercel
+export const lugar = (base) => (EN_LOCAL ? `Puerto ${new URL(base).port}` : new URL(base).host)
 
 const NOMBRES = {
   [API_CITAS]: 'api-citas',
