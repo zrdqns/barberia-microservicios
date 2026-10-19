@@ -22,3 +22,6 @@ Thumbs.db
 .impeccable/
 PRODUCT.md
 DESIGN.md
+
+# Datos de conexión a la base de datos
+.env

@@ -21,7 +21,8 @@ public class CitaDTOResponse {
     private EstadoCita estado;
     private String observaciones;
 
-    private int clienteId;
+    // null si el cliente se eliminó; la cita conserva su nombre
+    private Integer clienteId;
     private String clienteNombre;
 
     private int servicioId;

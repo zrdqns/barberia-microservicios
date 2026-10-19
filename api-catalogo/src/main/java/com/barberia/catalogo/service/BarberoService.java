@@ -1,56 +1,43 @@
 package com.barberia.catalogo.service;
 
+import com.barberia.catalogo.cliente.CitasCliente;
 import com.barberia.catalogo.dto.BarberoDTORequest;
 import com.barberia.catalogo.model.Barbero;
+import com.barberia.catalogo.repository.BarberoRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
+@RequiredArgsConstructor
 public class BarberoService {
 
-    // Los datos se almacenan temporalmente en memoria.
-    // El servidor atiende cada petición en un hilo distinto y todos comparten esta lista,
-    // por eso los métodos públicos son synchronized: entra una petición a la vez.
-    private final List<Barbero> barberos = new ArrayList<>();
-    private int siguienteId = 1;
+    // Los datos viven en la tabla catalogo.barbero de la base de datos
+    private final BarberoRepository barberoRepository;
+    private final CitasCliente citasCliente;
 
-    // Datos de demostración.
-    public BarberoService() {
-        barberos.add(new Barbero(siguienteId++, "Andrés Rojas", "1012345678", "3104567890", "Cortes clásicos", true));
-        barberos.add(new Barbero(siguienteId++, "Julián Mora", "1023456789", "3115678901", "Barba y afeitado", true));
-        barberos.add(new Barbero(siguienteId++, "Felipe Cárdenas", "1034567890", "3126789012", "Degradados", false));
-    }
-
-    public synchronized Barbero crear(BarberoDTORequest request) {
+    public Barbero crear(BarberoDTORequest request) {
         validar(request, 0);
 
         Barbero barbero = new Barbero();
-        barbero.setId(siguienteId++);
         copiarDatos(request, barbero);
         barbero.setActivo(request.getActivo() == null || request.getActivo());
 
-        barberos.add(barbero);
-        return barbero;
+        return barberoRepository.save(barbero);
     }
 
-    public synchronized List<Barbero> listar() {
-        // Se entrega una copia: quien la recorre no se cruza con otra petición que la modifique
-        return new ArrayList<>(barberos);
+    public List<Barbero> listar() {
+        return barberoRepository.findAllByOrderByIdAsc();
     }
 
-    public synchronized Barbero buscarPorId(int id) {
-        for (Barbero barbero : barberos) {
-            if (barbero.getId() == id) {
-                return barbero;
-            }
-        }
-        throw new NoSuchElementException("No se encontró un barbero con el ID " + id + ".");
+    public Barbero buscarPorId(int id) {
+        return barberoRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("No se encontró un barbero con el ID " + id + "."));
     }
 
-    public synchronized Barbero actualizar(int id, BarberoDTORequest request) {
+    public Barbero actualizar(int id, BarberoDTORequest request) {
         Barbero barbero = buscarPorId(id);
         validar(request, id);
 
@@ -58,17 +45,29 @@ public class BarberoService {
         if (request.getActivo() != null) {
             barbero.setActivo(request.getActivo());
         }
-        return barbero;
+        return barberoRepository.save(barbero);
     }
 
-    public synchronized void eliminar(int id) {
-        barberos.remove(buscarPorId(id));
+    // Un barbero con citas programadas no se elimina: esos clientes llegarían y nadie los atendería.
+    // Las citas viven en api-citas, así que se le pregunta antes.
+    public void eliminar(int id) {
+        Barbero barbero = buscarPorId(id);
+
+        int programadas = citasCliente.contarProgramadas("barberoId", id);
+        if (programadas > 0) {
+            throw new IllegalStateException(barbero.getNombre() + " tiene " + (programadas == 1
+                    ? "1 cita programada. Pásela a otro barbero o cancélela primero"
+                    : programadas + " citas programadas. Páselas a otro barbero o cancélelas primero")
+                    + ", o márquelo como inactivo.");
+        }
+
+        barberoRepository.delete(barbero);
     }
 
     private void copiarDatos(BarberoDTORequest request, Barbero barbero) {
         barbero.setNombre(request.getNombre().trim());
         barbero.setDocumento(request.getDocumento().trim());
-        barbero.setTelefono(request.getTelefono());
+        barbero.setTelefono(request.getTelefono() == null || request.getTelefono().isBlank() ? null : request.getTelefono().trim());
         barbero.setEspecialidad(request.getEspecialidad());
     }
 
@@ -76,13 +75,22 @@ public class BarberoService {
         if (request.getNombre() == null || request.getNombre().isBlank()) {
             throw new IllegalArgumentException("El nombre del barbero es obligatorio.");
         }
+        if (request.getNombre().trim().length() > 100) {
+            throw new IllegalArgumentException("El nombre no puede pasar de 100 caracteres.");
+        }
+        if (request.getEspecialidad() != null && request.getEspecialidad().length() > 255) {
+            throw new IllegalArgumentException("La especialidad no puede pasar de 255 caracteres.");
+        }
         if (request.getDocumento() == null || !request.getDocumento().trim().matches("\\d{6,10}")) {
             throw new IllegalArgumentException("El documento debe tener entre 6 y 10 dígitos.");
         }
-        for (Barbero otro : barberos) {
-            if (otro.getId() != idActual && otro.getDocumento().equals(request.getDocumento().trim())) {
-                throw new IllegalStateException("Ya existe un barbero con el documento " + otro.getDocumento() + ".");
-            }
+        // El teléfono es opcional, pero si se envía sigue la misma regla que el de los clientes
+        if (request.getTelefono() != null && !request.getTelefono().isBlank()
+                && !request.getTelefono().trim().matches("\\d{7,10}")) {
+            throw new IllegalArgumentException("El teléfono debe tener entre 7 y 10 dígitos.");
+        }
+        if (barberoRepository.existsByDocumentoAndIdNot(request.getDocumento().trim(), idActual)) {
+            throw new IllegalStateException("Ya existe un barbero con el documento " + request.getDocumento().trim() + ".");
         }
     }
 }

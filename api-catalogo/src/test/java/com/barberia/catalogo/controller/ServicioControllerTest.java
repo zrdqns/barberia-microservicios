@@ -1,13 +1,19 @@
 package com.barberia.catalogo.controller;
 
+import com.barberia.catalogo.cliente.CitasCliente;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.client.ResourceAccessException;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
@@ -19,14 +25,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
 
-// Cada prueba arranca con los datos de demostración intactos
+// Cada prueba arranca con una base de datos nueva que solo tiene los datos de demostración.
+// api-citas se reemplaza por un doble: por defecto responde que no hay citas programadas.
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class ServicioControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private CitasCliente citasCliente;
 
     @Test
     void postCreaElServicioYResponde201() throws Exception {
@@ -95,6 +106,35 @@ class ServicioControllerTest {
 
         mockMvc.perform(get("/api/servicios/1"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteResponde409SiElServicioTieneCitasProgramadas() throws Exception {
+        when(citasCliente.contarProgramadas("servicioId", 1)).thenReturn(2);
+
+        mockMvc.perform(delete("/api/servicios/1"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.mensaje").value(containsString("2 citas programadas")));
+        mockMvc.perform(get("/api/servicios/1"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void deleteResponde503SiApiCitasNoContesta() throws Exception {
+        when(citasCliente.contarProgramadas("servicioId", 1))
+                .thenThrow(new ResourceAccessException("Connection refused"));
+
+        mockMvc.perform(delete("/api/servicios/1"))
+                .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
+    void barberoConTelefonoInvalidoResponde400() throws Exception {
+        mockMvc.perform(post("/api/barberos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Sebastián Gil\",\"documento\":\"1045678901\",\"telefono\":\"12\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensaje").value("El teléfono debe tener entre 7 y 10 dígitos."));
     }
 
     @Test

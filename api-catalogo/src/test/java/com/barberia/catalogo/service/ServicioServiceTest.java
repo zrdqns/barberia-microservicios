@@ -1,9 +1,14 @@
 package com.barberia.catalogo.service;
 
+import com.barberia.catalogo.cliente.CitasCliente;
 import com.barberia.catalogo.dto.ServicioDTORequest;
 import com.barberia.catalogo.model.Servicio;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.NoSuchElementException;
 
@@ -11,16 +16,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
+// Cada prueba arranca con una base H2 nueva que tiene los 4 servicios de demostración (IDs 1 a 4)
+@SpringBootTest
+@ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class ServicioServiceTest {
 
+    @Autowired
     private ServicioService servicioService;
 
-    @BeforeEach
-    void preparar() {
-        // El service arranca con 4 servicios de demostración (IDs 1 a 4)
-        servicioService = new ServicioService();
-    }
+    // api-citas se reemplaza por un doble: por defecto responde que no hay citas programadas
+    @MockitoBean
+    private CitasCliente citasCliente;
 
     @Test
     void crearAsignaElIdYDejaElServicioActivo() {
@@ -67,6 +76,14 @@ class ServicioServiceTest {
 
         assertEquals(3, servicioService.listar().size());
         assertThrows(NoSuchElementException.class, () -> servicioService.buscarPorId(1));
+    }
+
+    @Test
+    void eliminarRechazaUnServicioConCitasProgramadas() {
+        when(citasCliente.contarProgramadas("servicioId", 1)).thenReturn(1);
+
+        assertThrows(IllegalStateException.class, () -> servicioService.eliminar(1));
+        assertEquals(4, servicioService.listar().size());
     }
 
     @Test

@@ -4,12 +4,15 @@ import com.barberia.citas.dto.CitaDTORequest;
 import com.barberia.citas.dto.CitaDTOResponse;
 import com.barberia.citas.dto.EstadoCitaDTORequest;
 import com.barberia.citas.model.Cita;
+import com.barberia.citas.model.EstadoCita;
 import com.barberia.citas.service.CitaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,11 +36,19 @@ public class CitaController {
     }
 
     // GET /api/citas
+    // Filtros opcionales: ?clienteId=1&barberoId=2&servicioId=3&estado=PROGRAMADA&fecha=2026-10-20
+    // api-catalogo usa barberoId o servicioId con estado=PROGRAMADA antes de eliminar.
     @GetMapping
-    public ResponseEntity<List<CitaDTOResponse>> listar() {
+    public ResponseEntity<List<CitaDTOResponse>> listar(
+            @RequestParam(required = false) Integer clienteId,
+            @RequestParam(required = false) Integer barberoId,
+            @RequestParam(required = false) Integer servicioId,
+            @RequestParam(required = false) EstadoCita estado,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+
         List<CitaDTOResponse> respuesta = new ArrayList<>();
 
-        for (Cita cita : citaService.listar()) {
+        for (Cita cita : citaService.listar(clienteId, barberoId, servicioId, estado, fecha)) {
             respuesta.add(aRespuesta(cita));
         }
 
@@ -85,14 +96,15 @@ public class CitaController {
                 cita.getFechaHora(),
                 cita.getEstado(),
                 cita.getObservaciones(),
-                cita.getCliente().getId(),
-                cita.getCliente().getNombre(),
-                cita.getServicio().getId(),
-                cita.getServicio().getNombre(),
-                cita.getServicio().getPrecio(),
-                cita.getServicio().getDuracionMinutos(),
-                cita.getBarbero().getId(),
-                cita.getBarbero().getNombre()
+                // null si el cliente ya se eliminó
+                cita.getCliente() != null ? cita.getCliente().getId() : null,
+                cita.nombreCliente(),
+                cita.getServicioId(),
+                cita.getServicioNombre(),
+                cita.getPrecio(),
+                cita.getDuracionMinutos(),
+                cita.getBarberoId(),
+                cita.getBarberoNombre()
         );
     }
 }
