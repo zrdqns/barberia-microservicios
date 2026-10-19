@@ -166,8 +166,10 @@ The whole system is also running on Vercel, with the same Supabase database:
 
 Swagger is at `/swagger-ui.html` on each API address.
 
-Each folder is its own Vercel project and is deployed from inside it with `vercel deploy --prod`.
-The settings come from environment variables in each project, never from the repository:
+Each folder is its own Vercel project connected to this repository, with that folder as its
+root directory. Every push to `main` publishes on its own the parts whose folder changed; the
+others skip the build. The settings come from environment variables in each project, never
+from the repository:
 
 | Project | Variables |
 |---|---|
