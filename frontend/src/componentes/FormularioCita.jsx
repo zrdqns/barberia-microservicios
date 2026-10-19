@@ -1,17 +1,22 @@
 import { UserPlus } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { barberos, citas, clientes, servicios } from '../api.js'
+import { barberos, citas, clientes, horario, servicios } from '../api.js'
 import { camposCliente } from '../camposCliente.js'
 import { textoSonda, useConexion } from '../conexion.jsx'
 import { REVISAR_CONEXION } from '../datos.js'
 import {
+  aLas,
+  atencionDe,
   claveDia,
   finDe,
   formatoDia,
   formatoPesos,
   horaCorta,
+  horaDeMinutos,
+  losDias,
   minutosAhora,
   minutosDe,
+  paraCampoHora,
   tramo,
 } from '../formato.js'
 import Alerta from './Alerta.jsx'
@@ -71,13 +76,20 @@ export default function FormularioCita({ cita, alCerrar, alGuardar }) {
 
   const cargar = useCallback(async () => {
     setCargando(true)
-    const [listaClientes, listaServicios, listaBarberos, listaCitas] = await Promise.all([
+    const [listaClientes, listaServicios, listaBarberos, listaCitas, listaHorario] = await Promise.all([
       listar(clientes),
       listar(servicios),
       listar(barberos),
       listar(citas),
+      listar(horario),
     ])
-    setOpciones({ clientes: listaClientes, servicios: listaServicios, barberos: listaBarberos, citas: listaCitas })
+    setOpciones({
+      clientes: listaClientes,
+      servicios: listaServicios,
+      barberos: listaBarberos,
+      citas: listaCitas,
+      horario: listaHorario,
+    })
     setCargando(false)
     if (!listaClientes || !listaServicios || !listaBarberos) window.dispatchEvent(new Event(REVISAR_CONEXION))
   }, [])
@@ -132,6 +144,18 @@ export default function FormularioCita({ cita, alCerrar, alGuardar }) {
   const fin = inicio !== null && servicioElegido ? inicio + servicioElegido.duracionMinutos : null
   const cruce = fin !== null ? ocupadas.find((otra) => inicio < finDe(otra) && minutosDe(otra.fechaHora) < fin) : undefined
 
+  // El horario de atención de ese día: null si no se atiende, undefined si api-citas no lo entregó.
+  // api-citas rechaza las citas que empiezan antes de abrir o terminan después de cerrar.
+  const atencion = atencionDe(opciones?.horario, valores.fecha)
+  const textoHorario = atencion ? `de ${horaDeMinutos(atencion.apertura)} a ${horaDeMinutos(atencion.cierre)}` : ''
+  const ultimaHora = atencion ? atencion.cierre - (servicioElegido?.duracionMinutos ?? 0) : null
+  const fueraDeHorario = Boolean(atencion) && inicio !== null && (inicio < atencion.apertura || inicio > ultimaHora)
+  const ayudaHora = atencion
+    ? `Se atiende ${textoHorario}.`
+    : atencion === null && valores.fecha
+      ? `${losDias(valores.fecha)} no se atiende.`
+      : undefined
+
   const hayCambios = Object.keys(iniciales).some((nombre) => valores[nombre] !== iniciales[nombre]) || clienteNuevo !== null
 
   function cambiar(nombre, valor) {
@@ -178,9 +202,14 @@ export default function FormularioCita({ cita, alCerrar, alGuardar }) {
     if (!valores.barberoId) encontrados.barberoId = 'Seleccione el barbero.'
     if (!valores.fecha) encontrados.fecha = 'Indique la fecha.'
     else if (valores.fecha < hoy) encontrados.fecha = 'Esa fecha ya pasó.'
+    else if (atencion === null) encontrados.fecha = `${losDias(valores.fecha)} la barbería no atiende.`
     if (!valores.hora) encontrados.hora = 'Indique la hora.'
     else if (valores.fecha === hoy && inicio < minutosAhora()) encontrados.hora = 'Esa hora ya pasó.'
-    else if (cruce) encontrados.hora = `Se cruza con la cita de ${cruce.clienteNombre}.`
+    else if (fueraDeHorario) {
+      encontrados.hora = servicioElegido
+        ? `Se atiende ${textoHorario}: con ${servicioElegido.duracionMinutos} min, la última cita empieza ${aLas(ultimaHora)}.`
+        : `Se atiende ${textoHorario}.`
+    } else if (cruce) encontrados.hora = `Se cruza con la cita de ${cruce.clienteNombre}.`
     setErrores(encontrados)
     const primero = Object.keys(encontrados)[0]
     if (primero) {
@@ -396,14 +425,16 @@ export default function FormularioCita({ cita, alCerrar, alGuardar }) {
         />
       </Campo>
 
-      <Campo id="cita-hora" etiqueta="Hora" error={errores.hora}>
+      <Campo id="cita-hora" etiqueta="Hora" error={errores.hora} ayuda={ayudaHora}>
         <input
           id="cita-hora"
           type="time"
           step="300"
+          min={atencion ? paraCampoHora(atencion.apertura) : undefined}
+          max={atencion ? paraCampoHora(ultimaHora) : undefined}
           value={valores.hora}
           aria-invalid={Boolean(errores.hora)}
-          aria-describedby={describe('cita-hora', errores.hora)}
+          aria-describedby={describe('cita-hora', errores.hora, ayudaHora)}
           onChange={(evento) => cambiar('hora', evento.target.value)}
         />
       </Campo>
@@ -417,6 +448,9 @@ export default function FormularioCita({ cita, alCerrar, alGuardar }) {
           fin={fin}
           cruce={cruce}
           horaPasada={horaPasada}
+          atencion={atencion}
+          fueraDeHorario={fueraDeHorario}
+          textoHorario={textoHorario}
         />
       )}
 
@@ -432,11 +466,17 @@ export default function FormularioCita({ cita, alCerrar, alGuardar }) {
 }
 
 // El día del barbero elegido: una franja con lo que ya tiene ocupado y dónde
-// caería la cita nueva. Así el cruce se ve antes de guardar.
-function Ocupacion({ barbero, fecha, ocupadas, inicio, fin, cruce, horaPasada }) {
-  const marcas = [...ocupadas.flatMap((otra) => [minutosDe(otra.fechaHora), finDe(otra)]), inicio ?? 480, fin ?? 1200]
-  const desde = Math.min(8, Math.floor(Math.min(...marcas) / 60)) * 60
-  const hasta = Math.min(24, Math.max(20, Math.ceil(Math.max(...marcas) / 60))) * 60
+// caería la cita nueva. Así el cruce se ve antes de guardar. La franja cubre el
+// horario de atención de ese día y se alarga si algo queda por fuera.
+function Ocupacion({ barbero, fecha, ocupadas, inicio, fin, cruce, horaPasada, atencion, fueraDeHorario, textoHorario }) {
+  const marcas = [
+    ...ocupadas.flatMap((otra) => [minutosDe(otra.fechaHora), finDe(otra)]),
+    ...(atencion ? [atencion.apertura, atencion.cierre] : [480, 1200]),
+    ...(fin !== null ? [inicio, fin] : []),
+  ]
+  const desde = Math.floor(Math.min(...marcas) / 60) * 60
+  const hasta = Math.min(24, Math.ceil(Math.max(...marcas) / 60)) * 60
+  const mal = cruce || horaPasada || fueraDeHorario
   const lugar = (desdeMinuto, hastaMinuto) => ({
     left: `${((desdeMinuto - desde) / (hasta - desde)) * 100}%`,
     width: `${((hastaMinuto - desdeMinuto) / (hasta - desde)) * 100}%`,
@@ -452,7 +492,7 @@ function Ocupacion({ barbero, fecha, ocupadas, inicio, fin, cruce, horaPasada })
         {ocupadas.map((otra) => (
           <span key={otra.id} className="franja-ocupada" style={lugar(minutosDe(otra.fechaHora), finDe(otra))} />
         ))}
-        {fin !== null && <span className={cruce || horaPasada ? 'franja-nueva cruce' : 'franja-nueva'} style={lugar(inicio, fin)} />}
+        {fin !== null && <span className={mal ? 'franja-nueva cruce' : 'franja-nueva'} style={lugar(inicio, fin)} />}
       </div>
       <div className="franja-escala" aria-hidden="true">
         <span>{horaCorta(desde)}</span>
@@ -475,12 +515,14 @@ function Ocupacion({ barbero, fecha, ocupadas, inicio, fin, cruce, horaPasada })
         </ul>
       )}
 
-      <p className={cruce || horaPasada ? 'ocupacion-cruce' : 'ocupacion-libre'} role="status">
+      <p className={mal ? 'ocupacion-cruce' : 'ocupacion-libre'} role="status">
         {fin === null
           ? ''
           : horaPasada
             ? `La cita iría de ${tramo(inicio, fin)}, pero esa hora ya pasó. Elija una hora posterior.`
-            : cruce
+            : fueraDeHorario
+              ? `La cita iría de ${tramo(inicio, fin)}, fuera del horario de atención (${textoHorario}).`
+              : cruce
               ? `La cita iría de ${tramo(inicio, fin)} y se cruza con la de ${cruce.clienteNombre}. Elija otra hora u otro barbero.`
               : `La cita va de ${tramo(inicio, fin)} y ese horario está libre.`}
       </p>

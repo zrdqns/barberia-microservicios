@@ -56,6 +56,11 @@ export const citas = {
   cambiarEstado: (id, estado) => pedir(API_CITAS, `/api/citas/${id}/estado`, 'PATCH', { estado }),
 }
 
+// Horario de atención por día de la semana. Lo guarda api-citas, que no deja agendar fuera de él.
+export const horario = {
+  listar: () => pedir(API_CITAS, '/api/horario'),
+}
+
 export const estado = {
   citas: () => pedir(API_CITAS, '/api/status'),
   catalogo: () => pedir(API_CATALOGO, '/api/status'),

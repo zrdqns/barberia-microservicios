@@ -18,7 +18,7 @@ const textos = {
   vacioTexto: 'Sin un servicio activo no se pueden agendar citas.',
   ninguno: 'Ningún servicio',
   confirmar: (servicio) =>
-    `Se eliminará el servicio «${servicio.nombre}». Las citas ya agendadas conservan sus datos.`,
+    `Se eliminará el servicio «${servicio.nombre}». Si tiene citas programadas no se podrá: cancélelas, cámbielas de servicio o desactívelo. Las citas ya cerradas conservan sus datos.`,
 }
 
 const columnas = [

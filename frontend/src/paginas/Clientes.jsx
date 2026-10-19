@@ -17,7 +17,7 @@ const textos = {
   vacioTexto: 'Sin clientes no se pueden agendar citas.',
   ninguno: 'Ningún cliente',
   confirmar: (cliente) =>
-    `Se eliminará a ${cliente.nombre} (documento ${cliente.documento}). Esta acción no se puede deshacer.`,
+    `Se eliminará a ${cliente.nombre} (documento ${cliente.documento}). Sus citas anteriores se conservan con su nombre. Esta acción no se puede deshacer.`,
 }
 
 const columnas = [

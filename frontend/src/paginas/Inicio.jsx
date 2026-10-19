@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Plus, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { barberos, citas } from '../api.js'
+import { barberos, citas, horario } from '../api.js'
 import AgendaSillas, { AgendaEsqueleto } from '../componentes/AgendaSillas.jsx'
 import Alerta from '../componentes/Alerta.jsx'
 import Boleta, { AccionesCita } from '../componentes/Boleta.jsx'
@@ -12,12 +12,15 @@ import { textoSonda, useConexion } from '../conexion.jsx'
 import { useLista } from '../datos.js'
 import {
   aLas,
+  atencionDe,
   claveDia,
   contarCitas,
   finDe,
   formatoFecha,
   formatoHora,
   formatoPesos,
+  horaDeMinutos,
+  losDias,
   minutosAhora,
   minutosDe,
   moverDia,
@@ -33,6 +36,7 @@ const sumar = (lista) => lista.reduce((total, cita) => total + cita.precio, 0)
 export default function Inicio() {
   const agenda = useLista(citas)
   const equipo = useLista(barberos)
+  const semana = useLista(horario)
   const gestion = useGestionCitas(agenda.cargar)
   // En pantallas angostas las columnas por silla no caben: el día se lee como lista
   const angosta = useMedia('(max-width: 900px)')
@@ -99,6 +103,10 @@ export default function Inicio() {
   const sujeto = nombreRelativo(dia, hoy) ?? `El ${partes.semana} ${partes.numero}`
   const verbo = dia < hoy ? 'hubo' : 'hay'
 
+  // Horario de atención del día: null si no se atiende, undefined si aún no se conoce
+  const atencion = atencionDe(semana.lista, dia)
+  const cerrado = `${losDias(dia)} la barbería no atiende.`
+
   let resumen
   if (dia < hoy) {
     resumen = `Completadas: ${completadas.length}. Canceladas: ${canceladas}. Sin cerrar: ${vencidas.length}.`
@@ -115,6 +123,8 @@ export default function Inicio() {
     resumen = `No queda nadie por atender, pero hay ${contarCitas(vencidas.length)} sin cerrar: complétela o cancélela.`
   } else if (enAgenda.length > 0) {
     resumen = 'No queda nadie por atender.'
+  } else if (atencion === null) {
+    resumen = cerrado
   } else {
     resumen = dia === hoy ? 'Agende la primera cita del día.' : 'Ese día está libre.'
   }
@@ -240,10 +250,20 @@ export default function Inicio() {
                 ))}
               </ul>
             ) : (
-              <Vacio titulo="Día sin citas">
-                <p>{dia < hoy ? 'No se agendó nada ese día.' : 'Todavía no hay nada agendado para este día.'}</p>
+              <Vacio titulo={atencion === null ? 'Día sin atención' : 'Día sin citas'}>
+                <p>
+                  {atencion === null
+                    ? cerrado
+                    : dia < hoy
+                      ? 'No se agendó nada ese día.'
+                      : 'Todavía no hay nada agendado para este día.'}
+                </p>
               </Vacio>
             )
+          ) : atencion === null && enAgenda.length === 0 ? (
+            <Vacio titulo="Día sin atención">
+              <p>{cerrado} Pase a otro día para agendar.</p>
+            </Vacio>
           ) : sillas.length > 0 ? (
             <>
               {/* La clave abre cada día en su hora de arranque */}
@@ -253,11 +273,14 @@ export default function Inicio() {
                 citas={enAgenda}
                 ahora={dia === hoy ? ahora : null}
                 limite={dia < hoy ? Infinity : dia === hoy ? ahora : 0}
+                atencion={atencion}
                 seleccion={enBoleta?.id}
                 alElegir={(cita) => setElegida(cita.id)}
                 alAgendar={(silla, minuto) => agendar({ barberoId: silla.id, fechaHora: `${dia}T${paraCampoHora(minuto)}` })}
               />
               <p className="agenda-pie">
+                {atencion && `Horario: ${horaDeMinutos(atencion.apertura)} a ${horaDeMinutos(atencion.cierre)}. `}
+                {atencion === null && `${cerrado} `}
                 {dia < hoy
                   ? 'Día pasado: ya no se puede agendar en él. Pulse una cita para verla en la boleta.'
                   : 'Pulse un espacio libre para agendar a esa hora con ese barbero, o una cita para verla en la boleta.'}

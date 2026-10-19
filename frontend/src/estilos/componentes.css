@@ -545,12 +545,6 @@
   outline: none;
 }
 
-.nota-aviso {
-  margin-top: 8px;
-  color: var(--rojo);
-  font-weight: 700;
-}
-
 .modal-cuerpo .alerta {
   margin-bottom: 0;
 }

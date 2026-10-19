@@ -89,6 +89,26 @@ export function partesHora(minutos) {
 
 export const finDe = (cita) => minutosDe(cita.fechaHora) + cita.duracionMinutos
 
+// Una cita que ya empezó: solo esas se pueden completar
+export const yaEmpezo = (cita, momento = new Date()) => cita.fechaHora.slice(0, 16) <= paraCampoFecha(momento)
+
+// El horario de atención de un día, en minutos: { apertura, cierre }.
+// null si ese día no se atiende y undefined mientras no se conozca el horario.
+// `horario` es la lista de GET /api/horario, con los días de 1 (lunes) a 7 (domingo).
+const aMinutos = (hora) => Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3, 5))
+export function atencionDe(horario, clave) {
+  if (!horario) return undefined
+  const dia = fechaDe(clave).getDay() || 7
+  const registro = horario.find((opcion) => opcion.diaSemana === dia)
+  return registro?.abierto ? { apertura: aMinutos(registro.apertura), cierre: aMinutos(registro.cierre) } : null
+}
+
+// "Los sábados", "Los lunes"
+export function losDias(clave) {
+  const nombre = diaSemana.format(fechaDe(clave))
+  return `Los ${nombre.endsWith('s') ? nombre : `${nombre}s`}`
+}
+
 // "a las 11:00 a. m.", "a la 1:30 p. m."
 export function aLas(minutos) {
   const texto = horaDeMinutos(minutos)

@@ -16,7 +16,8 @@ const textos = {
   vacioTitulo: 'Aún no hay barberos',
   vacioTexto: 'Sin un barbero activo no se pueden agendar citas.',
   ninguno: 'Ningún barbero',
-  confirmar: (barbero) => `Se eliminará a ${barbero.nombre}. Las citas ya agendadas conservan sus datos.`,
+  confirmar: (barbero) =>
+    `Se eliminará a ${barbero.nombre}. Si tiene citas programadas no se podrá: páselas a otro barbero, cancélelas o márquelo como inactivo. Las citas ya cerradas conservan sus datos.`,
 }
 
 const columnas = [
@@ -53,7 +54,14 @@ const campos = [
     soloDigitos: true,
     validar: (valor) => (/^\d{6,10}$/.test(valor.trim()) ? '' : 'Debe tener entre 6 y 10 dígitos.'),
   },
-  { nombre: 'telefono', etiqueta: 'Teléfono', tipo: 'tel', soloDigitos: true, opcional: true },
+  {
+    nombre: 'telefono',
+    etiqueta: 'Teléfono',
+    tipo: 'tel',
+    soloDigitos: true,
+    opcional: true,
+    validar: (valor) => (!valor || /^\d{7,10}$/.test(valor) ? '' : 'Debe tener entre 7 y 10 dígitos.'),
+  },
   {
     nombre: 'especialidad',
     etiqueta: 'Especialidad',

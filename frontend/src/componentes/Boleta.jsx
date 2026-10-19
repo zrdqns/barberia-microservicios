@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react'
-import { finDe, formatoDia, formatoPesos, horaDeMinutos, minutosDe, partesHora, sinCerrar } from '../formato.js'
+import { finDe, formatoDia, formatoPesos, horaDeMinutos, minutosDe, partesHora, sinCerrar, yaEmpezo } from '../formato.js'
 import Sello, { SelloEstado } from './Sello.jsx'
 
 // Una cita como boleta: el talón con la hora y, al lado, quién, qué y con quién.
@@ -59,15 +59,18 @@ export function AccionesCita({ cita, gestion }) {
     <div className="boleta-acciones">
       {cita.estado === 'PROGRAMADA' && (
         <>
-          <button
-            type="button"
-            className="boton boton-chico"
-            aria-label={`Completar ${cual}`}
-            onClick={() => gestion.completar(cita)}
-          >
-            <Check aria-hidden="true" />
-            Completar
-          </button>
+          {/* Solo se completa una cita que ya empezó; api-citas rechaza las demás */}
+          {yaEmpezo(cita) && (
+            <button
+              type="button"
+              className="boton boton-chico"
+              aria-label={`Completar ${cual}`}
+              onClick={() => gestion.completar(cita)}
+            >
+              <Check aria-hidden="true" />
+              Completar
+            </button>
+          )}
           <button type="button" className="boton boton-chico" aria-label={`Editar ${cual}`} onClick={() => gestion.editar(cita)}>
             Editar
           </button>

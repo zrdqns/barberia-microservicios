@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { citas } from '../api.js'
-import { paraCampoFecha } from '../formato.js'
 import { useAvisos } from './Avisos.jsx'
 import { FichaCita } from './Boleta.jsx'
 import Confirmacion from './Confirmacion.jsx'
@@ -77,9 +76,6 @@ export function useGestionCitas(alCambiar) {
         >
           <FichaCita cita={pendiente.cita} />
           <p>{confirmacion.texto}</p>
-          {pendiente.tipo === 'completar' && pendiente.cita.fechaHora.slice(0, 16) > paraCampoFecha() && (
-            <p className="nota-aviso">Esta cita todavía no ha empezado.</p>
-          )}
         </Confirmacion>
       )}
     </>

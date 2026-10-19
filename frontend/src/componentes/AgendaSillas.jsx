@@ -13,16 +13,22 @@ const alto = (minutos) => (minutos * ALTO_HORA) / 60
 // sillas: [{ id, nombre, recibe, nota }]   recibe: si se le puede agendar
 // ahora:  minutos del día si se está viendo hoy; null en otro día
 // limite: minuto antes del cual ya no se puede agendar
-export default function AgendaSillas({ sillas, citas, ahora, limite, seleccion, alElegir, alAgendar }) {
+// atencion: { apertura, cierre } en minutos; null si ese día no se atiende
+export default function AgendaSillas({ sillas, citas, ahora, limite, atencion, seleccion, alElegir, alAgendar }) {
   const vista = useRef(null)
 
+  // Las horas van del horario de atención, y se alargan si alguna cita quedó por fuera
   const marcas = citas.flatMap((cita) => [minutosDe(cita.fechaHora), finDe(cita)])
-  const desde = Math.min(8, Math.floor(Math.min(480, ...marcas) / 60))
-  const hasta = Math.min(24, Math.max(20, Math.ceil(Math.max(1200, ...marcas) / 60)))
+  const desde = Math.floor(Math.min(atencion?.apertura ?? 480, ...marcas) / 60)
+  const hasta = Math.min(24, Math.ceil(Math.max(atencion?.cierre ?? 1200, ...marcas) / 60))
   const arriba = (minutos) => alto(minutos - desde * 60)
 
   const horas = Array.from({ length: hasta - desde }, (_, orden) => desde + orden)
-  const huecos = Array.from({ length: ((hasta - desde) * 60) / PASO }, (_, orden) => desde * 60 + orden * PASO)
+  // Los espacios libres solo caen dentro del horario de atención
+  const primero = atencion ? atencion.apertura : desde * 60
+  const ultimo = atencion ? atencion.cierre : hasta * 60
+  const huecos =
+    atencion === null ? [] : Array.from({ length: Math.floor((ultimo - primero) / PASO) }, (_, orden) => primero + orden * PASO)
   const ahoraVisible = ahora !== null && ahora >= desde * 60 && ahora <= hasta * 60
 
   // La agenda se desplaza por dentro. Al abrir un día arranca una hora antes de

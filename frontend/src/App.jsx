@@ -146,7 +146,8 @@ function AvisoConexion() {
     texto = 'Encienda api-catalogo (puerto 8081) y api-citas (puerto 8080). Mientras tanto no hay datos que mostrar.'
   } else if (!apiCitas) {
     titulo = 'api-citas no responde'
-    texto = 'No se pueden consultar ni guardar clientes ni citas. Servicios y barberos siguen disponibles.'
+    texto =
+      'No se pueden consultar ni guardar clientes ni citas. Servicios y barberos se pueden consultar y editar, pero no eliminar: antes de eliminar, api-catalogo le pregunta a api-citas si tienen citas programadas.'
   } else if (!apiCatalogo) {
     titulo = 'api-catalogo no responde'
     texto =
